@@ -1,0 +1,16 @@
+[package]
+name = "gateway"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+rust_decimal.workspace = true
+rust_decimal_macros.workspace = true
+socket2.workspace = true
+bincode2.workspace = true
+serde.workspace = true
+zerocopy.workspace = true
+tokio.workspace = true
+
+common = { path="../common", package = "common" }
+shared-protos = { path="../shared-protos", package = "shared-protos" }

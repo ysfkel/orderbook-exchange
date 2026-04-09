@@ -1,0 +1,52 @@
+mod config;
+mod error;
+mod network;
+mod parser;
+mod types;
+
+use network::message_handler::*;
+use socket2::{Domain, Socket, Type};
+use std::mem::MaybeUninit;
+use std::net::{Ipv4Addr, SocketAddr};
+use tracing::{Level, error, event, info, warn};
+pub use types::*;
+
+use crate::network::create_socket;
+pub fn main() -> std::io::Result<()> {
+    let subscriber = tracing_subscriber::fmt()
+        .compact()
+        .with_file(false)
+        .with_line_number(true)
+        .with_thread_ids(true)
+        .with_target(true)
+        .finish();
+
+    tracing::subscriber::set_global_default(subscriber).expect("Failed to set subscriber");
+
+    event!(Level::INFO, "Starting the engine...");
+
+    error!("This is an error message");
+    warn!("This is a warning message");
+    info!("This is an info message");
+
+    let sock = create_socket(Ipv4Addr::UNSPECIFIED, Ipv4Addr::new(239, 1, 1, 1), 9000).unwrap();
+    // 3. Pre-allocate buffer
+    let mut buf: Vec<MaybeUninit<u8>> = vec![MaybeUninit::uninit(); 1024];
+
+    loop {
+        let (size, src) = sock.recv_from(&mut buf[..])?;
+
+        // Convert initialized part to &[u8]
+        let bytes: &[u8] = unsafe { std::slice::from_raw_parts(buf.as_ptr() as *const u8, size) };
+
+        if bytes.len() < 8 {
+            error!("Received packet too small from {} bytes", bytes.len());
+            continue; // Skip to next iteration
+        }
+
+        match handle_message(bytes, 256) {
+            Ok(()) => info!("Message from {:?} handled successfully", src),
+            Err(e) => error!("Failed to handle message from {:?}: {:?}", src, e),
+        }
+    }
+}

@@ -1,0 +1,55 @@
+[[markets]]
+market_index = 0
+base = "BTC"
+quote = "USDT"
+tick_size = 0.01       # minimum price increment in USDT
+lot_size = 0.0001      # minimum quantity increment in BTC
+min_notional = 10      # minimum total order value in USDT
+
+[[markets]]
+market_index = 1
+base = "ETH"
+quote = "USDT"
+tick_size = 0.01
+lot_size = 0.001
+min_notional = 10
+
+[[markets]]
+market_index = 2
+base = "UNI"
+quote = "USDT"
+tick_size = 0.0001
+lot_size = 0.1
+min_notional = 10
+
+[[markets]]
+market_index = 3
+base = "MKR"
+quote = "USDT"
+tick_size = 0.01
+lot_size = 0.001
+min_notional = 10
+
+[[markets]]
+market_index = 4
+base = "SUSHI"
+quote = "USDT"
+tick_size = 0.0001
+lot_size = 1
+min_notional = 10
+
+[[markets]]
+market_index = 5
+base = "COMP"
+quote = "USDT"
+tick_size = 0.01
+lot_size = 0.001
+min_notional = 10
+
+[[markets]]
+market_index = 6
+base = "AAVE"
+quote = "USDT"
+tick_size = 0.01
+lot_size = 0.001
+min_notional = 10

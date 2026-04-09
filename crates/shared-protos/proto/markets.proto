@@ -1,0 +1,38 @@
+syntax = "proto3";
+package markets;
+
+service Markets {
+    rpc GetMarkets (GetMarketsRequest) returns (GetMarketsReply);
+    rpc GetMarketsIds (GetMarketsIdsRequest) returns (GetMarketsIdsReply);
+}
+
+message Market {
+    int32  id = 1;
+    int32  market_index = 2;
+    int32  price_scale = 3;
+    int32  qty_scale = 4;
+    int64  tick_size = 5;
+    int64  lot_size = 6;
+    int64  min_notional = 7;
+    bool is_active = 8;
+    string symbol = 9;
+}
+
+message MarketId {
+    int32 id = 1;
+    int32 market_index = 2;
+}
+
+message GetMarketsRequest {}
+
+message GetMarketsReply {
+   repeated Market markets = 1;
+}
+
+// This is for the GetMarketsIds endpoint, which only returns the market ids and indices
+
+message GetMarketsIdsRequest {}
+
+message GetMarketsIdsReply {
+   repeated MarketId markets_ids = 1;
+}
