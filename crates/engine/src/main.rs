@@ -12,6 +12,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use tracing::{Level, error, event, info};
 pub use types::*;
 
+
+
 pub fn main() {
     let subscriber = tracing_subscriber::fmt()
         .compact()
@@ -20,6 +22,9 @@ pub fn main() {
         .with_thread_ids(true)
         .with_target(true)
         .finish();
+
+    network::transport::run();
+
 
     tracing::subscriber::set_global_default(subscriber).expect("Failed to set subscriber");
 

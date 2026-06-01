@@ -1,0 +1,74 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT \n               m.id,\n               m.market_index,\n               m.is_active,\n               m.tick_size,\n               m.lot_size,\n               m.min_notional,\n               m.price_scale,\n               m.qty_scale,\n               base.name  AS base,\n               quote.name AS quote\n            FROM markets m\n            JOIN assets base  ON base.id  = m.base_asset_id\n            JOIN assets quote ON quote.id = m.quote_asset_id \n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "market_index",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 3,
+        "name": "tick_size",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "lot_size",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "min_notional",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 6,
+        "name": "price_scale",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "qty_scale",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "base",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "quote",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "5297b480fb7d2f21ca7c38f99b53c11875ab9e5e12a5d5909d079f2ab7f66f12"
+}

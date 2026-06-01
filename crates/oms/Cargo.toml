@@ -1,0 +1,23 @@
+[package]
+name = "oms" #Order Management System
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+rust_decimal.workspace = true
+rust_decimal_macros.workspace = true
+socket2.workspace = true
+bincode2.workspace = true
+serde.workspace = true
+zerocopy.workspace = true
+tokio.workspace = true
+rusteron-client.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tonic.workspace = true
+
+common = { path="../common", package = "common" }
+transport = { path = "../transport", package = "transport"}
+shared-protos = { path="../shared-protos", package = "shared-protos" }
+rtrb.workspace = true

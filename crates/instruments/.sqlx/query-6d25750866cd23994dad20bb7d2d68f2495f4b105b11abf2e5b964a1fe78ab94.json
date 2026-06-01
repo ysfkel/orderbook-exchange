@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, base_asset_id, quote_asset_id, market_index,tick_size,lot_size ,min_notional,price_scale,qty_scale,is_active FROM markets WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "base_asset_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "quote_asset_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "market_index",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "tick_size",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "lot_size",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 6,
+        "name": "min_notional",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 7,
+        "name": "price_scale",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "qty_scale",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 9,
+        "name": "is_active",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "6d25750866cd23994dad20bb7d2d68f2495f4b105b11abf2e5b964a1fe78ab94"
+}

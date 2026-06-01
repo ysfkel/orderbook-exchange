@@ -10,5 +10,5 @@ bincode2.workspace = true
 serde.workspace = true
 zerocopy.workspace = true
 toml.workspace = true
-
+rusteron-client.workspace = true
 

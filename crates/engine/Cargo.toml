@@ -20,4 +20,5 @@ metrics.workspace = true
 clap.workspace = true
 zerocopy.workspace = true
 ctrlc.workspace = true
-
+rusteron-client.workspace = true
+transport = { path = "../transport", package = "transport"}

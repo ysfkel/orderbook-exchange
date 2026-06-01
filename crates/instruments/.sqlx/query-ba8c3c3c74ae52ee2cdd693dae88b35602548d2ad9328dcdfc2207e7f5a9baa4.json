@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO assets (name) VALUES ($1)\n          -- if a row with this name already exists...\n         ON CONFLICT (name) \n          -- ...do a pointless update (same value) just to force a RETURNING\n         DO UPDATE SET name = EXCLUDED.name\n          -- EXCLUDED.name = the value we tried to insert ($1)\n          -- this makes postgres ALWAYS return the row, whether inserted or not\n         RETURNING id, name",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "ba8c3c3c74ae52ee2cdd693dae88b35602548d2ad9328dcdfc2207e7f5a9baa4"
+}

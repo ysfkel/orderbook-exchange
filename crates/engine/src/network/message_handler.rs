@@ -65,10 +65,10 @@ pub fn handle_message(bytes: &[u8], max_msg_size: usize) -> Result<(), ProgramEr
                 Ok(msg) => {
                     let order_dto = &msg.body.order;
                     info!(
-                        "Parsed CreateOrderMessage: price={}, quantity={}, symbol={}",
+                        "Parsed CreateOrderMessage: price={}, quantity={}",
                         order_dto.price,
                         order_dto.quantity,
-                        &msg.body.market.to_string()
+                       // &msg.body.market.to_string()
                     );
                 }
                 Err(e) => {

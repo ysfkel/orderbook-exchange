@@ -3,7 +3,7 @@
 #  crates =[
 #     "crates/*"
 #  ]
-members = ["crates/common","crates/engine", "crates/gateway", "crates/markets", "crates/shared-protos"]
+members = ["crates/common","crates/engine", "crates/oms", "crates/utils/ringbuffer", "crates/instruments", "crates/shared-protos", "crates/transport", "crates/gateway", "crates/risk", "crates/markets"]
 
 [workspace.dependencies]
 rust_decimal_macros = "1.40.0"
@@ -22,10 +22,13 @@ zerocopy = { version = "0.8.42", features = ["derive"] }
 ctrlc = "3.5.2"
 toml = "1.1.2"
 dotenv = "0.15.0"
-sqlx = { version = "0.8.6", features = ["postgres", "runtime-tokio-native-tls", "macros"] }
+sqlx = { version = "0.8.6", features = ["postgres", "runtime-tokio-native-tls", "macros", "migrate"] }
 tokio ={ version = "1.50.0", features = ["full"] }
 prost = "0.14.3"
 tonic = "0.14.5" 
 tonic-prost-build = "0.14.5"
 tonic-prost = "0.14.5"
 async-trait = "0.1.89"
+rusteron-client ={ version = "0.1.163", features = ["static", "precompile"]  }
+crossbeam-utils = "0.8.21"
+rtrb = "0.3.4"

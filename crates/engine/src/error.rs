@@ -19,6 +19,9 @@ pub enum ProgramError {
 
     #[error("Failed to Deserialize Message Body: {0}")]
     DeserializeMessageBody(DeserializeErrorKind),
+
+    #[error("Failed to subscribe to transport: {0}")]
+    TransportSubsriptionError(#[from] transport::PollError),
 }
 
 #[derive(Debug, thiserror::Error)]

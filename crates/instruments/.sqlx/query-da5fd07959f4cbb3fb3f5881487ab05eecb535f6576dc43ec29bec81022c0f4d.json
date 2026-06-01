@@ -1,0 +1,84 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO markets (\n            base_asset_id, quote_asset_id, market_index,\n            tick_size, lot_size, min_notional,\n            price_scale, qty_scale, is_active\n        )\n        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)\n        ON CONFLICT (base_asset_id, quote_asset_id)\n        DO UPDATE SET base_asset_id = EXCLUDED.base_asset_id\n        RETURNING\n            id, base_asset_id, quote_asset_id, market_index,\n            tick_size, lot_size, min_notional,\n            price_scale, qty_scale, is_active",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "base_asset_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "quote_asset_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "market_index",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "tick_size",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "lot_size",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 6,
+        "name": "min_notional",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 7,
+        "name": "price_scale",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "qty_scale",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 9,
+        "name": "is_active",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int8",
+        "Int8",
+        "Int8",
+        "Int4",
+        "Int4",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "da5fd07959f4cbb3fb3f5881487ab05eecb535f6576dc43ec29bec81022c0f4d"
+}
