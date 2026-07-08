@@ -1,70 +1,85 @@
-mod network;
 pub mod error;
+mod network;
+mod service;
+pub mod storage;
 
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::thread;
 
-use bincode2;
-use common::types::Market;
-use common::types::{CreateOrder, OrderDTO, OrderId, OrderSide, OrderType, UserId, create_order};
-use shared_protos::markets::markets_client::MarketsClient;
-use socket2::{Domain, Socket, Type};
-use std::net::{Ipv4Addr, SocketAddr};
-use zerocopy::IntoBytes;
+use common::queue::RingBufferQueue;
+use common::types::NewOrder;
 
-use shared_protos::markets::markets_server::Markets;
-use shared_protos::markets::{GetMarketsReply, GetMarketsRequest};
+use crate::network::clients::instruments::InstrumentsClient;
+use crate::network::inbound::new_order_listener::start_new_order_listener;
 use crate::network::outbound::start::run;
+use crate::service::new_order::NewOrderService;
 #[tokio::main]
-async fn main() -> std::io::Result<()> {
-    let socket = Socket::new(Domain::IPV4, Type::DGRAM, None)?;
-    socket.set_reuse_address(true)?;
-    socket.bind(&SocketAddr::from(([0, 0, 0, 0], 0)).into())?;
-    socket.set_multicast_if_v4(&Ipv4Addr::UNSPECIFIED)?; // ← add this
-    socket.set_multicast_loop_v4(true)?;
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let subscriber = tracing_subscriber::fmt()
+        .compact()
+        .with_file(false)
+        .with_line_number(true)
+        .with_thread_ids(true)
+        .with_target(true)
+        .finish();
 
-    // 6. Multicast destination
-    let mc = SocketAddr::from((Ipv4Addr::new(239, 1, 1, 1), 9001));
-    
-    let data = OrderDTO::new(
-        23600,
-        18,
-        100,
-      //  18,
-       // 0,
-       1,
-        26222,
-        1,
-        1,
-        OrderType::MARKET,
-        common::types::OrderStatus::Pending,
-        OrderSide::Buy,
-    );
+    tracing::subscriber::set_global_default(subscriber).expect("Failed to set subscriber");
 
-    let market: Market = "SOL-USDC".parse().unwrap(); // parse is implemented in types
+    let shutdown = Arc::new(AtomicBool::new(false));
+    let shutdown_t1 = shutdown.clone();
+    let shutdown_t2 = shutdown.clone();
+    let shutdown_t3 = shutdown.clone();
+    let shutdown_ctlrc = shutdown.clone();
 
-    let create_order = create_order(data);
+    // 2. register ctrlc before spawning threads
+    ctrlc::set_handler(move || shutdown_ctlrc.store(true, Ordering::Relaxed))?;
 
-    let create_order_bytes = create_order.as_bytes();
-    socket.send_to(create_order_bytes, &mc.into())?;
-
-    if let Err(e) = connect_grpc().await {
+    if let Err(e) = get_instruments().await {
         eprintln!("gRPC call failed: {:?}", e);
     }
-    // todo 
+    // todo
     //1 pass order to ringbudder which  pushes to aeron transport publisher
     println!("starting publisher");
-    run();
+    let max_msg_size = 512;
+
+    let RingBufferQueue{ producer, consumer }: RingBufferQueue<NewOrder> = RingBufferQueue::new(4096);
+
+    let t1 = thread::Builder::new()
+        .name("oms-inbound-orders".into())
+        .spawn(move || {
+            start_new_order_listener(shutdown_t1, max_msg_size, producer);
+        })?;
+
+    let t2 = thread::Builder::new()
+        .name("oms-outbound-orders".into())
+        .spawn(move || {
+            run(shutdown_t2);
+        })?;
+
+      // `consumer` is handed to NewOrderService here — it's the other end of
+    // the same ring buffer `producer` was moved into above, on t1. This
+    // thread drains whatever the Aeron listener pushes.
+    let t3 = thread::Builder::new()
+        .name("oms-new-order-service".into())
+        .spawn(move || {
+            let mut new_order_service = NewOrderService::new(consumer);
+            new_order_service.run(shutdown_t3);
+        })?;
+
+    t1.join().expect("inbound-orders thread panicked");
+    t2.join().expect("inbound-reports thread panicked");
+
     Ok(())
 }
 
-async fn connect_grpc() -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = MarketsClient::connect("http://127.0.0.1:50051").await?;
+async fn get_instruments() -> Result<(), Box<dyn std::error::Error>> {
+    let mut client = InstrumentsClient::connect("http://127.0.0.1:50051").await?;
+    let markets = client.get_instruments().await?;
 
-    let r = client.get_markets(GetMarketsRequest {}).await?;
-
-    for market in r.into_inner().markets {
+    for market in markets {
         println!("MARKET={:?}", market);
     }
-    
 
     Ok(())
 }

@@ -429,11 +429,15 @@ name = "common"
 version = "0.1.0"
 dependencies = [
  "bincode2",
+ "rtrb",
  "rust_decimal",
  "rust_decimal_macros",
  "rusteron-client",
  "serde",
+ "thiserror",
  "toml",
+ "tracing",
+ "tracing-subscriber",
  "zerocopy",
 ]
 
@@ -836,6 +840,23 @@ dependencies = [
 [[package]]
 name = "gateway"
 version = "0.1.0"
+dependencies = [
+ "common",
+ "ctrlc",
+ "metrics",
+ "rtrb",
+ "rust_decimal",
+ "rust_decimal_macros",
+ "rusteron-client",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tracing",
+ "tracing-subscriber",
+ "transport",
+ "uuid",
+ "zerocopy",
+]
 
 [[package]]
 name = "generic-array"
@@ -1535,6 +1556,7 @@ version = "0.1.0"
 dependencies = [
  "bincode2",
  "common",
+ "ctrlc",
  "rtrb",
  "rust_decimal",
  "rust_decimal_macros",

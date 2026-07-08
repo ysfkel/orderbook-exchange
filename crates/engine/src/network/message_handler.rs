@@ -63,12 +63,12 @@ pub fn handle_message(bytes: &[u8], max_msg_size: usize) -> Result<(), ProgramEr
             info!("Received Create order");
             match CreateOrderMessage::try_ref_from_bytes(&bytes) {
                 Ok(msg) => {
-                    let order_dto = &msg.body.order;
+                    let order_dto = &msg.body;
                     info!(
                         "Parsed CreateOrderMessage: price={}, quantity={}",
                         order_dto.price,
                         order_dto.quantity,
-                       // &msg.body.market.to_string()
+                
                     );
                 }
                 Err(e) => {

@@ -1,4 +1,3 @@
-
 // /// A lock-free data structure enables multiple threads to access it
 // /// concurrently without using locks.
 // /// Insstead, it relies on atomic operations, low-level CPU instructions that execute indivisibly,
@@ -6,8 +5,6 @@
 
 // use std::{cell::UnsafeCell, mem::MaybeUninit, sync::atomic::AtomicUsize};
 // use crossbeam_utils::CachePadded;
- 
-
 
 //  struct RingBuffer<T, const N: usize> {
 //     values: [Slot<T>; N],

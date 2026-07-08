@@ -41,21 +41,21 @@ pub struct OrderDTO {
     pub filled_quantity: u128,     // offset 32
     pub timestamp: u64,            // offset 48
     pub market_id: u32,            // offset 56
-    pub order_id: u32,             // offset 60 
+    pub order_id: u32,             // offset 60
     pub user_id: u32,              // offset 64
     pub order_type: OrderType,     // offset 68
     pub order_status: OrderStatus, // offset 69
-    pub side: OrderSide,           // offset 70 - 
-    _padding: [u8; 9],             // offset 71, explicit padding to make struct size 71 + 9=80 bytes. which makes the struct size a multiple of the largest alignment u128 (16 bytes ) for zero-copy safety. 
+    pub side: OrderSide,           // offset 70 -
+    _padding: [u8; 9], // offset 71, explicit padding to make struct size 71 + 9=80 bytes. which makes the struct size a multiple of the largest alignment u128 (16 bytes ) for zero-copy safety.
 }
- 
+
 impl OrderDTO {
     pub fn new(
         price: u128,
         quantity: u128,
         filled_quantity: u128,
         timestamp: u64,
-        market_id: u32, 
+        market_id: u32,
         order_id: u32,
         user_id: u32,
         order_type: OrderType,

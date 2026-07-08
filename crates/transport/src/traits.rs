@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::error::{PublishError, PollError};
+use crate::error::{PollError, PublishError};
 
 /// Appends byte messages to a transport stream.
 ///
@@ -13,7 +13,7 @@ use crate::error::{PublishError, PollError};
 
 pub trait Publisher: Send {
     type Data: Display;
-    type Error:  std::error::Error + Send + Sync + 'static;
+    type Error: std::error::Error + Send + Sync + 'static;
     /// Attempt to publish `bytes`. On success returns the new stream position.
     fn publish(&self, bytes: &[u8]) -> Result<Self::Data, Self::Error>;
 }
@@ -29,4 +29,5 @@ pub trait Subscriber: Send {
     type Data: Display;
     type Error: std::error::Error + Send + Sync + 'static;
     fn poll(&mut self, fragment_limit: usize) -> Result<Self::Data, Self::Error>;
+    fn is_connected(&self) -> bool;
 }

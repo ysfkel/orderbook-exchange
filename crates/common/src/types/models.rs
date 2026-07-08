@@ -4,10 +4,11 @@ use zerocopy::{FromZeros, Immutable, IntoBytes, KnownLayout, TryFromBytes, Unali
 use crate::types::dto::OrderDTO;
 
 #[derive(Debug, Clone, Copy, IntoBytes, Unaligned, Immutable, KnownLayout, FromZeros)]
-#[repr(u8)]
+#[repr(i8)]
 pub enum OrderSide {
-    Buy = 0,
-    Sell = 1,
+    Unset = 0,
+    Buy = 1,
+    Sell = -1,
 }
 
 #[derive(Debug, Clone, Copy, IntoBytes, Unaligned, Immutable, KnownLayout, FromZeros)]

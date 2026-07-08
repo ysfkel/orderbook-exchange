@@ -6,7 +6,6 @@ use rusteron_client::bindings::{
     AERON_PUBLICATION_MAX_POSITION_EXCEEDED, AERON_PUBLICATION_NOT_CONNECTED,
 };
 
-
 const NOT_CONNECTED: i64 = AERON_PUBLICATION_NOT_CONNECTED as i64;
 const BACK_PRESSURED: i64 = AERON_PUBLICATION_BACK_PRESSURED as i64;
 const ADMIN_ACTION: i64 = AERON_PUBLICATION_ADMIN_ACTION as i64;
@@ -71,7 +70,7 @@ impl PublishError {
 impl From<i64> for PublishError {
     fn from(code: i64) -> Self {
         match code {
-            NOT_CONNECTED  => PublishError::NotConnected,
+            NOT_CONNECTED => PublishError::NotConnected,
             BACK_PRESSURED => PublishError::BackPressured,
             ADMIN_ACTION => PublishError::AdminAction,
             CLOSED => PublishError::Closed,
@@ -85,6 +84,11 @@ impl From<i64> for PublishError {
 pub enum PollError {
     #[error("subscription closed")]
     Closed,
+
+    // aeronmd was stopped or crashed. Caller should reconnect.
+    #[error("media driver shutdown (code = {0})")]
+    DriverTimeout(i32),
+
     #[error("transport error: (code = {0})")]
     Other(i32),
 }
@@ -96,10 +100,11 @@ impl From<AeronCError> for PollError {
             error.kind = ?e.kind(),
             "transport error"
         );
-        
+
         match e.kind() {
             AeronErrorType::PublicationClosed => PollError::Closed,
-            _=> PollError::Other(e.code)
+            AeronErrorType::ClientErrorDriverTimeout => PollError::DriverTimeout(e.code),
+            _ => PollError::Other(e.code),
         }
     }
 }

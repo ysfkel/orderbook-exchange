@@ -3,4 +3,21 @@ name = "gateway"
 version = "0.1.0"
 edition = "2024"
 
+
 [dependencies]
+common = { path = "../common", package = "common" }
+# External crates
+rust_decimal.workspace = true
+rust_decimal_macros.workspace = true
+uuid.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+thiserror.workspace = true
+metrics.workspace = true
+zerocopy.workspace = true
+ctrlc.workspace = true
+rusteron-client.workspace = true
+transport = { path = "../transport", package = "transport"}
+rtrb.workspace = true

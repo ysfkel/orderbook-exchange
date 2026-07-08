@@ -1,6 +1,7 @@
+use common::{queue::QueueSendError, types::error::MessageError};
 use thiserror::Error;
 
-use transport::{SetupError, PublishError};
+use transport::{PublishError, SetupError};
 
 #[derive(Debug, Error)]
 pub enum ProgramError {
@@ -18,6 +19,13 @@ pub enum ProgramError {
 
     #[error("instruments service call failed: {0}")]
     InstrumentsCall(#[from] tonic::Status),
+
+    #[error("message error: {0}")]
+    MessageError(#[from] MessageError),
+
+    #[error("queue push failed")]
+    QueuePushError(#[from] QueueSendError<common::types::new_order::NewOrder>),
+ 
 }
 
 impl From<PublishError> for ProgramError {
