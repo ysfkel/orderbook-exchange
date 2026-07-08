@@ -1,6 +1,6 @@
 use zerocopy::{Immutable, IntoBytes, KnownLayout, TryFromBytes};
 
-use crate::types::{OrderSide, OrderType};
+use crate::types::{ClientId, OrderId, OrderSide, OrderType};
 
 use super::{MessageHeader, MessageType};
 
@@ -16,26 +16,26 @@ use super::{MessageHeader, MessageType};
 ///
 #[derive(Debug, IntoBytes, Immutable, KnownLayout, TryFromBytes)]
 #[repr(C)]
-pub struct Order {
+pub struct AcceptedOrder {
     pub price: u128,           // offset 0
     pub quantity: u128,        // offset 16
     pub timestamp: u64,        // offset 32
-    pub user_id: u32,          // offset 40
-    pub order_id: u32,         // offset 44 - Assigned by OMS
-    pub market_index: u32,     // offset 48
-    pub side: OrderSide,       // offset 52
-    pub order_type: OrderType, // offset 53
-    _padding: [u8; 10],        // offset 54 + padding(10 bytes) = 64 which is a multiple of 16
+    pub client_order_id: OrderId,     // offset 40 - Assigned by OMS
+    pub market_order_id: OrderId,     // offset 48
+    pub client_id: ClientId,          // offset 56
+    pub side: OrderSide,       // offset 60
+    pub order_type: OrderType, // offset 61
+    _padding: [u8; 2],        // offset 62 + padding(2 bytes) = 64 which is a multiple of 16
 }
 
-impl Order {
+impl AcceptedOrder {
     pub fn new(
         price: u128,
         quantity: u128,
         timestamp: u64,
-        user_id: u32,
-        order_id: u32,
-        market_index: u32,
+        client_order_id: OrderId,
+        market_order_id: OrderId,
+        client_id: ClientId,
         side: OrderSide,
         order_type: OrderType,
     ) -> Self {
@@ -43,12 +43,12 @@ impl Order {
             price,
             quantity,
             timestamp,
-            user_id,
-            order_id,
-            market_index,
+            client_order_id,
+            market_order_id,
+            client_id,
             side,
             order_type,
-            _padding: [0u8; 10],
+            _padding: [0u8; 2],
         }
     }
 }
@@ -58,17 +58,17 @@ impl Order {
 pub struct CreateOrderMessage {
     pub header: MessageHeader, // offset 0 bytes
     _padding: [u8; 15],        // offset 1
-    pub body: Order, // offset header(1 bytes) + padding(15 bytes)  + body(64 bytes) to make the struct 80 bytes which is a multiple of 16 which is the argest alignment in Order
+    pub body: AcceptedOrder, // offset header(1 bytes) + padding(15 bytes)  + body(64 bytes) to make the struct 80 bytes which is a multiple of 16 which is the argest alignment in Order
 }
 
-impl From<CreateOrderMessage> for Order {
+impl From<CreateOrderMessage> for AcceptedOrder {
     fn from(value: CreateOrderMessage) -> Self {
         value.body
     }
 }
 
 impl CreateOrderMessage {
-    pub fn new(order: Order) -> Self {
+    pub fn new(order: AcceptedOrder) -> Self {
         Self {
             header: MessageHeader {
                 message_type: MessageType::CreateOrder,

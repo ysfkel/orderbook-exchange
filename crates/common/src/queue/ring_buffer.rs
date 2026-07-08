@@ -24,7 +24,7 @@ impl<T> RingBufferQueue<T> {
     }
 }
  pub struct RingBufferProducer<T> {
-    pub producer: rtrb::Producer<T>,
+     producer: rtrb::Producer<T>,
  }
 
  impl<T> RingBufferProducer<T> {
@@ -46,7 +46,7 @@ impl<T> RingBufferQueue<T> {
  }
 
  pub struct RingBufferConsumer<T> {
-    pub consumer: rtrb::Consumer<T>,
+     consumer: rtrb::Consumer<T>,
  }
 
  impl<T> RingBufferConsumer<T> {

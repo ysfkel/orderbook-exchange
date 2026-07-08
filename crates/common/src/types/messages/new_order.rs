@@ -1,7 +1,22 @@
 use zerocopy::{Immutable, IntoBytes, KnownLayout, TryFromBytes};
 
-use crate::types::{MessageHeader, MessageType, OrderSide, OrderType};
+use crate::types::{ClientId, MessageHeader, MessageType, OrderId, OrderSide, OrderType, TickerId};
 
+/*
+
+client_order_id
+pub struct NewOrder {
+    pub price: u128,           // offset 0
+    pub quantity: u128,        // offset 16
+    pub timestamp: u64,        // offset 32
+    pub client_id: ClientId,        // offset 40
+    pub ticker_id: u32,        // offset 44
+    pub side: OrderSide,       // offset 48
+    pub order_type: OrderType, // offset 49
+    _padding: [u8; 14],        // offset 50 + padding(14 bytes) = 64 which is a multiple of 16
+}
+
+*/
 /// NewOrderRequest represents an order in the system.
 ///
 /// Memory layout and alignment notes:
@@ -15,12 +30,13 @@ use crate::types::{MessageHeader, MessageType, OrderSide, OrderType};
 pub struct NewOrder {
     pub price: u128,           // offset 0
     pub quantity: u128,        // offset 16
-    pub timestamp: u64,        // offset 32
-    pub client_id: u32,        // offset 40
-    pub ticker_id: u32,        // offset 44
-    pub side: OrderSide,       // offset 48
-    pub order_type: OrderType, // offset 49
-    _padding: [u8; 14],        // offset 50 + padding(14 bytes) = 64 which is a multiple of 16
+    pub timestamp: u64,           
+    pub client_order_id: OrderId,// offset 40 -> client generated
+    pub client_id: ClientId,        // offset 48
+    pub ticker_id: TickerId,        // offset 52
+    pub side: OrderSide,       // offset 56
+    pub order_type: OrderType, // offset 57
+    _padding: [u8; 6],        // offset 58 + padding(6 bytes) = 64 which is a multiple of 16
 }
 
 impl NewOrder {
@@ -28,8 +44,9 @@ impl NewOrder {
         price: u128,
         quantity: u128,
         timestamp: u64,
-        client_id: u32,
-        ticker_id: u32,
+        client_order_id: OrderId,
+        client_id: ClientId,
+        ticker_id: TickerId,
         side: OrderSide,
         order_type: OrderType,
     ) -> Self {
@@ -37,11 +54,12 @@ impl NewOrder {
             price,
             quantity,
             timestamp,
+            client_order_id,
             client_id,
             ticker_id, //market index,
             side,
             order_type,
-            _padding: [0u8; 14],
+            _padding: [0u8; 6],
         }
     }
 }
