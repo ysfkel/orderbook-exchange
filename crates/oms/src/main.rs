@@ -12,7 +12,7 @@ use common::types::{AcceptedOrder, NewOrder};
 
 use crate::network::clients::instruments::InstrumentsClient;
 use crate::network::inbound::new_order_listener::start_new_order_listener;
-use crate::network::outbound::start::run;
+use crate::network::outbound::start::start_accepted_order_publisher;
 use crate::service::new_order::NewOrderService;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -55,7 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let t2 = thread::Builder::new()
         .name("oms-outbound-orders".into())
         .spawn(move || {
-            run(shutdown_t2);
+            start_accepted_order_publisher(outbound_new_order_consumer,shutdown_t2);
         })?;
 
       // `consumer` is handed to NewOrderService here — it's the other end of

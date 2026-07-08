@@ -29,4 +29,5 @@ pub const ME_MAX_MARKET_UPDATES: usize = 256 * 1024;
 pub const ME_MAX_NUM_CLIENTS: usize = 64;
 pub const ME_MAX_ORDER_IDS: usize = 16 * 1024;
 pub const ME_MAX_PRICE_LEVELS: usize = 256;
- 
+
+pub const MAX_OFFER_RETRIES: u8 = 3;

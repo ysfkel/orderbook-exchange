@@ -1,6 +1,7 @@
 use common::{
     queue::{QueueConsumer, QueueProducer, QueueSendError, RingBufferConsumer, RingBufferProducer}, types::{AcceptedOrder, NewOrder, OrderId},
 };
+use tracing::info;
 use std::sync::{Arc, atomic::AtomicU64};
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -40,8 +41,7 @@ impl NewOrderService {
 
         // TODO! Using a stud market order id for now, will implement market order id generation logic later
         let market_order_id = get_market_order_id_stub();
-
-
+       
         let acceped_order = AcceptedOrder::new(
             order.price,
             order.quantity,

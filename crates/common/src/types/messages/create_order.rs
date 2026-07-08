@@ -14,7 +14,7 @@ use super::{MessageHeader, MessageType};
 /// - Automatic padding inserted by Rust is made explicit via `_padding` to ensure the struct is **padding-free** for `zerocopy::IntoBytes`.
 /// - Total struct size = 80 bytes (multiple of largest alignment 16), safe for zero-copy serialization.
 ///
-#[derive(Debug, IntoBytes, Immutable, KnownLayout, TryFromBytes)]
+#[derive(Debug, IntoBytes, Immutable, KnownLayout, TryFromBytes, Clone, Copy)]
 #[repr(C)]
 pub struct AcceptedOrder {
     pub price: u128,           // offset 0
