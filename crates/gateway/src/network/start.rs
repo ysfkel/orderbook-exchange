@@ -1,6 +1,6 @@
 use super::new_order::OrderPublisher;
 use crate::network::config::{AERON_DIR, NEW_ORDER_CHANNEL, NEW_ORDER_STREAM_ID};
-use common::types::{NewOrder, NewOrderMessage, OrderDTO, OrderSide, OrderType, create_order};
+use common::types::{NewOrder, NewOrderMessage, OrderSide, OrderType, create_order};
 use std::thread;
 use transport::AeronTransport;
 //

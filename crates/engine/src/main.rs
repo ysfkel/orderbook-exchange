@@ -3,15 +3,12 @@ mod engine;
 mod error;
 mod network;
 mod parser;
-mod types;
 
 use network::listener;
 use std::net::Ipv4Addr;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tracing::{Level, error, event, info};
-pub use types::*;
-
 pub fn main() {
     let subscriber = tracing_subscriber::fmt()
         .compact()
