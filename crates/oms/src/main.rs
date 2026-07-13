@@ -11,7 +11,7 @@ use common::queue::RingBufferQueue;
 use common::types::{AcceptedOrder, NewOrder};
 
 use crate::network::clients::instruments::InstrumentsClient;
-use crate::network::inbound::new_order_listener::start_new_order_listener;
+use crate::network::inbound::listener::start_new_order_listener;
 use crate::network::outbound::start::start_accepted_order_publisher;
 use crate::service::new_order::NewOrderService;
 #[tokio::main]
@@ -43,8 +43,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("starting publisher");
     let max_msg_size = 512;
 
-    let RingBufferQueue{ producer: new_order_producer, consumer: new_order_consumer }: RingBufferQueue<NewOrder> = RingBufferQueue::new(4096);
-    let RingBufferQueue{ producer: outbound_new_order_producer, consumer: outbound_new_order_consumer }: RingBufferQueue<AcceptedOrder> = RingBufferQueue::new(4096);
+    let RingBufferQueue {
+        producer: new_order_producer,
+        consumer: new_order_consumer,
+    }: RingBufferQueue<NewOrder> = RingBufferQueue::new(4096);
+    let RingBufferQueue {
+        producer: outbound_new_order_producer,
+        consumer: outbound_new_order_consumer,
+    }: RingBufferQueue<AcceptedOrder> = RingBufferQueue::new(4096);
 
     let t1 = thread::Builder::new()
         .name("oms-inbound-orders".into())
@@ -55,16 +61,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let t2 = thread::Builder::new()
         .name("oms-outbound-orders".into())
         .spawn(move || {
-            start_accepted_order_publisher(outbound_new_order_consumer,shutdown_t2);
+            start_accepted_order_publisher(outbound_new_order_consumer, shutdown_t2);
         })?;
 
-      // `consumer` is handed to NewOrderService here — it's the other end of
+    // `consumer` is handed to NewOrderService here — it's the other end of
     // the same ring buffer `producer` was moved into above, on t1. This
     // thread drains whatever the Aeron listener pushes.
     let t3 = thread::Builder::new()
         .name("oms-new-order-service".into())
         .spawn(move || {
-            let mut new_order_service = NewOrderService::new(new_order_consumer, outbound_new_order_producer);
+            let mut new_order_service =
+                NewOrderService::new(new_order_consumer, outbound_new_order_producer);
             new_order_service.run(shutdown_t3);
         })?;
 

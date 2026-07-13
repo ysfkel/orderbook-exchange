@@ -27,7 +27,9 @@ pub enum ProgramError {
     QueuePushError(#[from] QueueSendError<common::types::new_order::NewOrder>),
 
     #[error("outbound queue disconnected")]
-    OutboundQueueDisconnected
+    OutboundQueueDisconnected,
+    #[error("transport disconnected")]
+    TransportDisconnected,
 }
 
 impl From<PublishError> for ProgramError {

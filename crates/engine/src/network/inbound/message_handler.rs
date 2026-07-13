@@ -11,13 +11,10 @@
 //   3. When new message types are added to message.rs, the compiler forces you
 //      to handle them here (Rust's exhaustive match).
 // ═══════════════════════════════════════════════════════════════════════════
-use std::net::SocketAddr;
 
-use crate::{error::ProgramError};
+use crate::error::ProgramError;
 use common::types::{CreateOrderMessage, MessageHeader};
 use zerocopy::TryFromBytes;
-// use common::types::Message;
-use rust_decimal::prelude::ToPrimitive;
 use tracing::{error, info};
 
 /// Validates and deserializes one UDP payload, then acts on its contents.
@@ -67,9 +64,7 @@ pub fn handle_message(bytes: &[u8]) -> Result<(), ProgramError> {
                     let order = &msg.body;
                     info!(
                         "Parsed CreateOrderMessage: price={}, quantity={}",
-                        order.price,
-                        order.quantity,
-                
+                        order.price, order.quantity,
                     );
                 }
                 Err(e) => {

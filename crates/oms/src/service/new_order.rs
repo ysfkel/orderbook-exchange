@@ -1,9 +1,10 @@
 use common::{
-    queue::{QueueConsumer, QueueProducer, QueueSendError, RingBufferConsumer, RingBufferProducer}, types::{AcceptedOrder, NewOrder, OrderId},
+    queue::{QueueConsumer, QueueProducer, QueueSendError, RingBufferConsumer, RingBufferProducer},
+    types::{AcceptedOrder, NewOrder, OrderId},
 };
-use tracing::info;
-use std::sync::{Arc, atomic::AtomicU64};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, atomic::AtomicU64};
+use tracing::info;
 
 use crate::error::ProgramError;
 
@@ -23,25 +24,27 @@ pub struct NewOrderService {
 }
 
 impl NewOrderService {
-    pub fn new(new_order_consumer: RingBufferConsumer<NewOrder>, outbound_new_order_producer: RingBufferProducer<AcceptedOrder>) -> Self {
-        Self { 
+    pub fn new(
+        new_order_consumer: RingBufferConsumer<NewOrder>,
+        outbound_new_order_producer: RingBufferProducer<AcceptedOrder>,
+    ) -> Self {
+        Self {
             new_order_consumer,
-           outbound_new_order_producer,
-           dropped_orders: AtomicU64::new(0)
-         }
+            outbound_new_order_producer,
+            dropped_orders: AtomicU64::new(0),
+        }
     }
 
     /// Per-order processing — risk checks, then publish. Left as a stub per
     /// your original signature; note it'll likely need `&mut self` and an
     /// order argument once it actually does something with `self.consumer`.
-    pub fn process_new_order(&mut self, order: &NewOrder) ->  Result<(), ProgramError> {
-
+    pub fn process_new_order(&mut self, order: &NewOrder) -> Result<(), ProgramError> {
         // TODO!  perform riks checks on the order and if it passes, then publish to downstream publisher
-        // TODO! generate market_order_id 
+        // TODO! generate market_order_id
 
         // TODO! Using a stud market order id for now, will implement market order id generation logic later
         let market_order_id = get_market_order_id_stub();
-       
+
         let acceped_order = AcceptedOrder::new(
             order.price,
             order.quantity,
@@ -50,26 +53,22 @@ impl NewOrderService {
             market_order_id,
             order.client_id,
             order.side,
-            order.order_type
-
+            order.order_type,
         );
-       
-       // todo! handle the error if the push fails, for now just log it
-       match self.outbound_new_order_producer.push(acceped_order) {
+
+        // todo! handle the error if the push fails, for now just log it
+        match self.outbound_new_order_producer.push(acceped_order) {
             Ok(_) => {}
             Err(QueueSendError::Full(_)) => {
-
                 self.dropped_orders.fetch_add(1, Ordering::Relaxed);
                 // todo! send reject execution report back to client via outbound publisher
             }
             Err(QueueSendError::Disconnected(_)) => {
-              return Err(ProgramError::OutboundQueueDisconnected)
+                return Err(ProgramError::OutboundQueueDisconnected);
             }
-        
-       }
+        }
 
-       Ok(())
-
+        Ok(())
     }
 
     /// Drains the consumer until `shutdown` is set. This is the loop
@@ -81,7 +80,7 @@ impl NewOrderService {
                 Ok(_order) => {
                     // todo: pass `_order` into process_new_order once its
                     // signature takes one; for now this just drains the queue.
-                    self.process_new_order(&_order)?;  // Disconnected bubbles up and breaks the loop
+                    self.process_new_order(&_order)?; // Disconnected bubbles up and breaks the loop
                 }
                 Err(_e) => {
                     // `pop()` returning Err here is assumed to just mean

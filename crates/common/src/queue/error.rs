@@ -1,9 +1,8 @@
 use std::fmt;
 
-
-pub enum QueueSendError<T>{
-    Full(T), // backpressure — item returned, caller decides
-    Disconnected(T),  // consumer side gone, permanent
+pub enum QueueSendError<T> {
+    Full(T),         // backpressure — item returned, caller decides
+    Disconnected(T), // consumer side gone, permanent
 }
 
 impl<T> fmt::Debug for QueueSendError<T> {
@@ -29,7 +28,7 @@ impl<T> std::error::Error for QueueSendError<T> {}
 /// Result of a failed pop.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum QueueRecvError {
-    Empty,  // transient, poll again next cycle
+    Empty,        // transient, poll again next cycle
     Disconnected, // producer side gone, permanent — stop polling this queue
 }
 

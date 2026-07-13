@@ -17,15 +17,15 @@ use super::{MessageHeader, MessageType};
 #[derive(Debug, IntoBytes, Immutable, KnownLayout, TryFromBytes, Clone, Copy)]
 #[repr(C)]
 pub struct AcceptedOrder {
-    pub price: u128,           // offset 0
-    pub quantity: u128,        // offset 16
-    pub timestamp: u64,        // offset 32
-    pub client_order_id: OrderId,     // offset 40 - Assigned by OMS
-    pub market_order_id: OrderId,     // offset 48
-    pub client_id: ClientId,          // offset 56
-    pub side: OrderSide,       // offset 60
-    pub order_type: OrderType, // offset 61
-    _padding: [u8; 2],        // offset 62 + padding(2 bytes) = 64 which is a multiple of 16
+    pub price: u128,              // offset 0
+    pub quantity: u128,           // offset 16
+    pub timestamp: u64,           // offset 32
+    pub client_order_id: OrderId, // offset 40 - Assigned by OMS
+    pub market_order_id: OrderId, // offset 48
+    pub client_id: ClientId,      // offset 56
+    pub side: OrderSide,          // offset 60
+    pub order_type: OrderType,    // offset 61
+    _padding: [u8; 2],            // offset 62 + padding(2 bytes) = 64 which is a multiple of 16
 }
 
 impl AcceptedOrder {

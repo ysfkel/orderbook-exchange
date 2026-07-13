@@ -4,8 +4,8 @@ use common::types::{NewOrder, NewOrderMessage, OrderSide, OrderType, create_orde
 use std::thread;
 use transport::AeronTransport;
 //
-use zerocopy::IntoBytes;
 use std::time::{SystemTime, UNIX_EPOCH};
+use zerocopy::IntoBytes;
 
 pub fn run() {
     let tp = AeronTransport::connect(&AERON_DIR).expect("error connecting to aeron");
@@ -14,7 +14,16 @@ pub fn run() {
         .expect("failed to get publisher");
     let publisher = OrderPublisher::new(p).expect("failed to create publisher");
 
-    let new_order = NewOrder::new(23600, 18, nano_now(),1000, 1, 1, OrderSide::Buy, OrderType::MARKET);
+    let new_order = NewOrder::new(
+        23600,
+        18,
+        nano_now(),
+        1000,
+        1,
+        1,
+        OrderSide::Buy,
+        OrderType::MARKET,
+    );
 
     let order_message = NewOrderMessage::new(new_order);
 
@@ -29,10 +38,8 @@ pub fn run() {
 }
 
 fn nano_now() -> u64 {
-     match SystemTime::now()
-    .duration_since(UNIX_EPOCH) {
+    match SystemTime::now().duration_since(UNIX_EPOCH) {
         Ok(n) => n.as_nanos() as u64,
         Err(_) => 0,
     }
-
 }

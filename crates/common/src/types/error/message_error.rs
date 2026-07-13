@@ -31,5 +31,3 @@ impl<A, S, V> From<zerocopy::ConvertError<A, S, V>> for DeserializeErrorKind {
         }
     }
 }
-
- 

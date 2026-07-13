@@ -28,15 +28,15 @@ pub struct NewOrder {
 #[derive(Debug, IntoBytes, Immutable, KnownLayout, TryFromBytes, Clone, Copy)]
 #[repr(C)]
 pub struct NewOrder {
-    pub price: u128,           // offset 0
-    pub quantity: u128,        // offset 16
-    pub timestamp: u64,           
-    pub client_order_id: OrderId,// offset 40 -> client generated
-    pub client_id: ClientId,        // offset 48
-    pub ticker_id: TickerId,        // offset 52
-    pub side: OrderSide,       // offset 56
-    pub order_type: OrderType, // offset 57
-    _padding: [u8; 6],        // offset 58 + padding(6 bytes) = 64 which is a multiple of 16
+    pub price: u128,    // offset 0
+    pub quantity: u128, // offset 16
+    pub timestamp: u64,
+    pub client_order_id: OrderId, // offset 40 -> client generated
+    pub client_id: ClientId,      // offset 48
+    pub ticker_id: TickerId,      // offset 52
+    pub side: OrderSide,          // offset 56
+    pub order_type: OrderType,    // offset 57
+    _padding: [u8; 6],            // offset 58 + padding(6 bytes) = 64 which is a multiple of 16
 }
 
 impl NewOrder {

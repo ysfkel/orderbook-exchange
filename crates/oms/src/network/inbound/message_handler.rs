@@ -1,12 +1,10 @@
 use crate::error::ProgramError;
 use common::{
     queue::{QueueProducer, RingBufferProducer},
-    types::{error::MessageError, MessageHeader, MessageType, NewOrder, NewOrderMessage},
+    types::{MessageHeader, MessageType, NewOrder, NewOrderMessage},
 };
 use tracing::{error, info};
 use zerocopy::TryFromBytes;
-
-pub struct MessageHandler {}
 
 /// Validates and deserializes one UDP payload, then acts on its contents.
 ///
@@ -55,7 +53,7 @@ pub fn handle_message(
 
                     producer.push(new_order.body).map_err(|e| {
                         error!(error = %e, "failed to push new order to queue");
-                         ProgramError::QueuePushError(e)
+                        ProgramError::QueuePushError(e)
                     })?;
                     //todo! send to new order service
                 }

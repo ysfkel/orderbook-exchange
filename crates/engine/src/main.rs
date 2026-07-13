@@ -2,7 +2,7 @@ mod config;
 mod engine;
 mod error;
 mod network;
- 
+
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tracing::info;
@@ -15,7 +15,6 @@ pub fn main() {
         .with_target(true)
         .finish();
 
- 
     tracing::subscriber::set_global_default(subscriber).expect("Failed to set subscriber");
 
     let shutdown = Arc::new(AtomicBool::new(false));
@@ -27,7 +26,5 @@ pub fn main() {
     })
     .expect("Failed to set Ctrl-C handler");
 
-        network::transport::run();
-
-   
+    network::inbound::run(shutdown);
 }
