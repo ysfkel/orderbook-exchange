@@ -22,6 +22,8 @@ pub enum ProgramError {
 
     #[error("Failed to subscribe to transport: {0}")]
     TransportSubsriptionError(#[from] transport::PollError),
+    #[error("transport disconnected")]
+    TransportDisconnected,
 }
 
 #[derive(Debug, thiserror::Error)]

@@ -30,17 +30,18 @@ use tracing::{error, info};
 /// Returns Ok(()) if the message was handled successfully.
 /// Returns Err(...) if validation or deserialization failed — the caller
 /// decides whether to drop and continue or to escalate.
-pub fn handle_message(bytes: &[u8], max_msg_size: usize) -> Result<(), ProgramError> {
+pub fn handle_message(bytes: &[u8]) -> Result<(), ProgramError> {
     // ── Size guard ────────────────────────────────────────────────────────
     // Reject oversized packets before spending any CPU on them.
     // A buggy or malicious sender could craft a giant packet to make us
     // waste time deserializing garbage — drop it immediately instead.
-    if bytes.len() > max_msg_size {
-        return Err(ProgramError::MessageTooLarge {
-            size: bytes.len(),
-            max: max_msg_size,
-        });
-    }
+
+    // if bytes.len() > max_msg_size {
+    //     return Err(ProgramError::MessageTooLarge {
+    //         size: bytes.len(),
+    //         max: max_msg_size,
+    //     });
+    // }
 
     let header_size = size_of::<MessageHeader>();
 
@@ -63,11 +64,11 @@ pub fn handle_message(bytes: &[u8], max_msg_size: usize) -> Result<(), ProgramEr
             info!("Received Create order");
             match CreateOrderMessage::try_ref_from_bytes(&bytes) {
                 Ok(msg) => {
-                    let order_dto = &msg.body;
+                    let order = &msg.body;
                     info!(
                         "Parsed CreateOrderMessage: price={}, quantity={}",
-                        order_dto.price,
-                        order_dto.quantity,
+                        order.price,
+                        order.quantity,
                 
                     );
                 }

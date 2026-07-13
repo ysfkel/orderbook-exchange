@@ -87,7 +87,7 @@ impl AeronTransport {
     /// is where things like a queue producer get moved in, exactly once.
     pub fn build_fragment_handler<F>(handler: F) -> Result<FragmentHandler<F>, SetupError>
     where
-        F: FnMut(&[u8]) + Send + 'static,
+        F: FnMut(&[u8]) + Send  + 'static,
     {
         let (closure, _inner) = Handler::leak_with_fragment_assembler(FnAdapter(handler))?;
         Ok(FragmentHandler { closure, _inner })
