@@ -2,102 +2,130 @@ use super::accepted_order::OrderPublisher;
 use crate::network::config::{ACCEPTED_ORDER_CHANNEL, ACCEPTED_ORDER_STREAM_ID, AERON_DIR};
 use common::{
     queue::{QueueConsumer, QueueRecvError, RingBufferConsumer},
+    thread_handle::ThreadHandle,
+    traits::ThreadHandler,
     types::AcceptedOrder,
 };
-use std::sync::{
-    Arc,
-    atomic::{AtomicBool, Ordering},
-};
 use std::time::Duration;
-use tracing::{error, info, warn};
+use std::{
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
+    thread,
+};
 use transport::{AeronTransport, PublishError, Publisher};
 
 const RECONNECT_DELAY: Duration = Duration::from_secs(1);
 
 pub struct AcceptedOrderPublisher {
     consumer: RingBufferConsumer<AcceptedOrder>,
-    shutdown: Arc<AtomicBool>,
+    run: Arc<AtomicBool>,
     pub publish_count: u64,
     pub dropped_count: u64,
 }
 
 impl AcceptedOrderPublisher {
-    pub fn new(consumer: RingBufferConsumer<AcceptedOrder>, shutdown: Arc<AtomicBool>) -> Self {
+    pub fn new(consumer: RingBufferConsumer<AcceptedOrder>) -> Self {
         Self {
             consumer,
-            shutdown,
+            run: Arc::new(AtomicBool::new(false)),
             publish_count: 0,
             dropped_count: 0,
         }
     }
 
-    fn run_inner<T>(&mut self, publisher: &OrderPublisher<T>) -> Result<(), PublishError>
+    fn run_loop(mut self) {
+        let run = self.run.clone();
+        while run.load(Ordering::Acquire) {
+            let aeron = match AeronTransport::connect(AERON_DIR) {
+                Ok(a) => a,
+                Err(_) => {
+                    thread::sleep(RECONNECT_DELAY);
+                    continue;
+                }
+            };
+
+            let p = match aeron.publisher(ACCEPTED_ORDER_CHANNEL, ACCEPTED_ORDER_STREAM_ID) {
+                Ok(p) => p,
+                Err(_) => {
+                    thread::sleep(RECONNECT_DELAY);
+                    continue;
+                }
+            };
+
+            let publisher = OrderPublisher::new(p);
+
+            match self.pump(&publisher, &run) {
+                Ok(()) => break,
+                Err(e) => {
+                    std::thread::sleep(RECONNECT_DELAY);
+                }
+            }
+        }
+    }
+
+    fn pump<T>(
+        &mut self,
+        publisher: &OrderPublisher<T>,
+        run: &AtomicBool,
+    ) -> Result<(), PublishError>
     where
         T: Publisher,
         T::Error: Into<PublishError>,
     {
-        while !self.shutdown.load(Ordering::Relaxed) {
+        while run.load(Ordering::Acquire) {
             match self.consumer.pop() {
-                Ok(order) => match publisher.publish_order(order) {
-                    Ok(()) => self.publish_count += 1,
-                    Err(e) if e.is_retryable() => {
-                        // micro-retries already exhausted in publish_order
-                        // drop + count, do NOT reconnect
-                        self.dropped_count += 1;
-                    }
-                    Err(e) => return Err(e),
-                },
+                Ok(order) => self.publish_one(publisher, order)?,
                 Err(QueueRecvError::Empty) => std::hint::spin_loop(),
-                Err(QueueRecvError::Disconnected) => {
-                    self.shutdown.store(true, Ordering::Relaxed);
-                    return Ok(());
-                }
+                Err(QueueRecvError::Disconnected) => return Ok(()),
             }
         }
 
+        // stop() called. Precondition (main's stop order): the service feeding
+        // this ring is already stopped, so this terminates.
+        while let Ok(order) = self.consumer.pop() {
+            self.publish_one(publisher, order)?;
+        }
         Ok(())
+    }
+
+    fn publish_one<T>(
+        &mut self,
+        publisher: &OrderPublisher<T>,
+        order: AcceptedOrder,
+    ) -> Result<(), PublishError>
+    where
+        T: Publisher,
+        T::Error: Into<PublishError>,
+    {
+        match publisher.publish_order(order) {
+            Ok(()) => {
+                self.publish_count += 1;
+                Ok(())
+            }
+            Err(e) if e.is_retryable() => {
+                // micro-retries already exhausted inside publish_order:
+                // drop + count, don't tear down the connection
+                self.dropped_count += 1;
+                Ok(())
+            }
+            Err(e) => Err(e),
+        }
     }
 }
 
-pub fn start_accepted_order_publisher(
-    consumer: RingBufferConsumer<AcceptedOrder>,
-    shutdown: Arc<AtomicBool>,
-) {
-    let mut outbound = AcceptedOrderPublisher::new(consumer, Arc::clone(&shutdown));
-
-    loop {
-        if shutdown.load(Ordering::Relaxed) {
-            break;
-        }
-
-        let aeron = match AeronTransport::connect(&AERON_DIR) {
-            Ok(a) => a,
-            Err(e) => {
-                std::thread::sleep(RECONNECT_DELAY);
-                continue;
-            }
-        };
-
-        let p = match aeron.publisher(ACCEPTED_ORDER_CHANNEL, ACCEPTED_ORDER_STREAM_ID) {
-            Ok(p) => p,
-            Err(e) => {
-                std::thread::sleep(RECONNECT_DELAY);
-                continue;
-            }
-        };
-
-        let publisher = OrderPublisher::new(p);
-
-        match outbound.run_inner(&publisher) {
-            Ok(()) => {
-                if outbound.shutdown.load(Ordering::Relaxed) {
-                    break;
-                }
-                std::thread::sleep(RECONNECT_DELAY);
-            }
-            Err(e) => {
-                std::thread::sleep(RECONNECT_DELAY);
-            }
+impl ThreadHandler for AcceptedOrderPublisher {
+    fn start(self) -> ThreadHandle {
+        self.run.store(true, Ordering::Release);
+        let run = self.run.clone();
+        let thread = std::thread::Builder::new()
+            .name("oms-accepted-order-publisher".into())
+            .spawn(move || self.run_loop())
+            .expect("failed to spawn oms-accepted-order-publisher");
+        ThreadHandle {
+            run,
+            thread: Some(thread),
         }
     }
 }

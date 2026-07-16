@@ -20,10 +20,17 @@ use zerocopy::TryFromBytes;
 /// // producer: RingBufferProducer<NewOrder>
 pub fn handle_message(
     msg: &[u8],
-    max_msg_size: usize,
     producer: &mut RingBufferProducer<NewOrder>,
 ) -> Result<(), ProgramError> {
-    let header = MessageHeader::parse(msg, max_msg_size)?;
+    let header_size = size_of::<MessageHeader>();
+
+    let header = match MessageHeader::try_ref_from_bytes(&msg[..header_size]) {
+        Ok(h) => h,
+        Err(e) => {
+            error!("Header alignment/size error from {:?}", e);
+            return Err(ProgramError::DeserializeMessageHeader(e.into()));
+        }
+    };
     // ── Deserialization ───────────────────────────────────────────────────
     // ── Dispatch ──────────────────────────────────────────────────────────
     // Match on the message variant. Rust's exhaustive matching means if you

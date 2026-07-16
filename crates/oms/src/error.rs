@@ -1,4 +1,7 @@
-use common::{queue::QueueSendError, types::error::MessageError};
+use common::{
+    queue::QueueSendError,
+    types::error::{DeserializeErrorKind, MessageError},
+};
 use thiserror::Error;
 
 use transport::{PublishError, SetupError};
@@ -30,6 +33,12 @@ pub enum ProgramError {
     OutboundQueueDisconnected,
     #[error("transport disconnected")]
     TransportDisconnected,
+
+    #[error("Failed to Deserialize Message Header: {0}")]
+    DeserializeMessageHeader(DeserializeErrorKind),
+
+    #[error("Failed to Deserialize Message Body: {0}")]
+    DeserializeMessageBody(DeserializeErrorKind),
 }
 
 impl From<PublishError> for ProgramError {

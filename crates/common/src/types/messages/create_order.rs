@@ -1,6 +1,6 @@
 use zerocopy::{Immutable, IntoBytes, KnownLayout, TryFromBytes};
 
-use crate::types::{ClientId, OrderId, OrderSide, OrderType};
+use crate::types::{ClientId, OrderId, OrderSide, OrderType, TickerId};
 
 use super::{MessageHeader, MessageType};
 
@@ -23,9 +23,10 @@ pub struct AcceptedOrder {
     pub client_order_id: OrderId, // offset 40 - Assigned by OMS
     pub market_order_id: OrderId, // offset 48
     pub client_id: ClientId,      // offset 56
-    pub side: OrderSide,          // offset 60
-    pub order_type: OrderType,    // offset 61
-    _padding: [u8; 2],            // offset 62 + padding(2 bytes) = 64 which is a multiple of 16
+    pub ticker_id: TickerId,      // offset 60
+    pub side: OrderSide,          // offset 64
+    pub order_type: OrderType,    // offset 65
+    _padding: [u8; 14],           // offset 66 + padding(14 bytes) = 18 which is a multiple of 16
 }
 
 impl AcceptedOrder {
@@ -36,6 +37,7 @@ impl AcceptedOrder {
         client_order_id: OrderId,
         market_order_id: OrderId,
         client_id: ClientId,
+        ticker_id: TickerId,
         side: OrderSide,
         order_type: OrderType,
     ) -> Self {
@@ -46,9 +48,10 @@ impl AcceptedOrder {
             client_order_id,
             market_order_id,
             client_id,
+            ticker_id,
             side,
             order_type,
-            _padding: [0u8; 2],
+            _padding: [0u8; 14],
         }
     }
 }

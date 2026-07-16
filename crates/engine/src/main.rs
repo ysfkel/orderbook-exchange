@@ -2,11 +2,22 @@ mod config;
 mod engine;
 mod error;
 mod network;
+mod types;
 
+use common::queue::RingBufferQueue;
+use common::traits::ThreadHandler;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::thread;
+use std::time::Duration;
 use tracing::info;
-pub fn main() {
+use types::*;
+
+use crate::engine::matching_engine::MatchingEngine;
+use crate::network::Listener;
+
+#[tokio::main]
+pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let subscriber = tracing_subscriber::fmt()
         .compact()
         .with_file(false)
@@ -26,5 +37,24 @@ pub fn main() {
     })
     .expect("Failed to set Ctrl-C handler");
 
-    network::inbound::run(shutdown);
+    let RingBufferQueue {
+        producer: order_producer,
+        consumer: order_consumer,
+    }: RingBufferQueue<EngineRequest> = RingBufferQueue::new(4096);
+
+    // Start consumer first, then producer — so nothing is ever pushed
+    // into a ring nobody is draining.
+    let listener = Listener::new(order_producer).start();
+    let engine = MatchingEngine::new(order_consumer).start();
+
+    // Park until Ctrl-C.
+    while !shutdown.load(Ordering::Relaxed) {
+        thread::sleep(Duration::from_millis(100));
+    }
+
+    // Ordered teardown: silence the producer, then drain & stop the consumer.
+    engine.stop();
+    listener.stop();
+    info!("engine stopped");
+    Ok(())
 }

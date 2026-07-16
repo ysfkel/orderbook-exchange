@@ -68,7 +68,7 @@ impl OrderBook {
     ///
     /// All the parameters are what the gateway sends in: who submitted it, their own order ID, which instrument,
     /// buy or sell, at what price, and how many units.
-    fn add(
+    pub fn add(
         &mut self,
         client_id: ClientId,
         client_order_id: OrderId,

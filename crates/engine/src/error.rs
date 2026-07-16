@@ -1,4 +1,7 @@
+use common::queue::QueueSendError;
 use zerocopy::ConvertError;
+
+use crate::types::EngineRequest;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ProgramError {
@@ -22,8 +25,12 @@ pub enum ProgramError {
 
     #[error("Failed to subscribe to transport: {0}")]
     TransportSubsriptionError(#[from] transport::PollError),
+
     #[error("transport disconnected")]
     TransportDisconnected,
+
+    #[error("Queue push error: {0}")]
+    QueuePushError(#[from] QueueSendError<EngineRequest>),
 }
 
 #[derive(Debug, thiserror::Error)]
