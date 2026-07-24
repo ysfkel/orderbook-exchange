@@ -1,5 +1,4 @@
 # Low-Latency Crypto Exchange
-
 Low-Latency Rust Orderbook Engine (Prototype)
 Research implementation exploring high-performance exchange architecture, including price-time priority matching, custom memory management, intrusive data structures, and event-driven processing.
 
