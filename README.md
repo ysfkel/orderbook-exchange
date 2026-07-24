@@ -2,7 +2,7 @@
 Low-Latency Rust Orderbook Engine (Prototype)
 Research implementation exploring high-performance exchange architecture, including price-time priority matching, custom memory management, intrusive data structures, and event-driven processing.
 
-> **Work in progress.** Most crates have their structure and interfaces defined but are not yet fully implemented. The project is being built incrementally to explore and document the design decisions along the way.
+> **WIP.**  
 
 ---
 
