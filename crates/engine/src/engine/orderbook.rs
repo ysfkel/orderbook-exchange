@@ -5,6 +5,7 @@ use common::{
         PoolIdx, Price, Priority, Qty, TickerId,
     },
 };
+use tracing::info;
 
 use crate::engine::{
     order::{self, Order},
@@ -80,6 +81,8 @@ impl OrderBook {
         // The engine assigns its own internal ID — independent of client_order_id. The client may reuse their own IDs across reconnects; the engine's ID is unique for the lifetime of the book.
         let new_market_order_id = self.generate_new_market_order_id();
 
+        info!("new_market_order_id {}", new_market_order_id);
+
         // todo!
         // ACCEPTED (send accept message to the client-participant who sent the order) goes out immediately — minimizing time-to-ack matters for
         // latency-sensitive participants, even before matching runs.
@@ -97,6 +100,7 @@ impl OrderBook {
         // if it is a partial fill
         // park the remaining in the order book
         if leaves_qty > 0 {
+            info!("Partial fill -- {}", leaves_qty);
             let priotity = self.get_next_priority(price);
             // get empty pool index
             let empty_order_pool_index = self.order_pool.allocate();
@@ -118,7 +122,7 @@ impl OrderBook {
             // TODO!! self.send_market_update.
             //
             //
-        }
+        }  
     }
 
     // ------------------------------------------------------------------
@@ -152,6 +156,7 @@ impl OrderBook {
             (o.client_id, o.client_order_id, o.side, o.price)
         };
 
+        self.cid_oid_to_order[client_id as usize][client_order_id as usize] = order_pool_index;
         let level = self.get_price_level_index(price);
 
         // if the price level index (in the pool) is empty
@@ -292,6 +297,7 @@ impl OrderBook {
         let mut leaves_qty = quantity;
         match side {
             OrderSide::Buy => {
+                info!("check_for_match - buy");
                 leaves_qty = self.match_against_side(
                     client_id,
                     client_order_id,
@@ -304,6 +310,7 @@ impl OrderBook {
                 );
             }
             OrderSide::Sell => {
+                info!("check_for_match - sell");
                 leaves_qty = self.match_against_side(
                     client_id,
                     client_order_id,
@@ -375,10 +382,13 @@ impl OrderBook {
         mut leaves_qty: Qty,
     ) -> Qty {
         // get resting order
-        let mut passive = *self.order_pool.get_mut(itr);
-        let fill_qty = leaves_qty.min(passive.quantity);
+        let mut passive_qty = self.order_pool.get(itr).quantity;
+        let fill_qty = leaves_qty.min(passive_qty);
         leaves_qty -= fill_qty;
-        passive.quantity -= fill_qty;
+         
+        let remaining = passive_qty - fill_qty;
+        self.order_pool.get_mut(itr).quantity = remaining;
+
 
         // 1. todo! Send Fill report for the aggressive order - see converted rust code
 
@@ -386,7 +396,7 @@ impl OrderBook {
 
         // 3. Anonymous TRADE message for the public feed.
 
-        if passive.quantity == 0 {
+        if remaining == 0 {
             // The order is fully consumed by trades -> Order is no longer resting in the book
             // todo! send_market_update -> see original rust converted code
 
@@ -436,10 +446,9 @@ impl OrderBook {
             if l.head_order == order_idx {
                 l.head_order = next_order;
             }
-
-            self.cid_oid_to_order[client_id as usize][client_order_id as usize] = POOL_IDX_NULL;
-            self.order_pool.deallocate(order_idx);
         }
+        self.cid_oid_to_order[client_id as usize][client_order_id as usize] = POOL_IDX_NULL;
+        self.order_pool.deallocate(order_idx);
     }
 
     fn remove_orders_at_price(&mut self, side: OrderSide, price: Price) {
@@ -500,5 +509,47 @@ impl OrderBook {
         // Circular list: the tail is first->prev.
         let tail = self.order_pool.get(first).prev_order;
         self.order_pool.get(tail).priority + 1
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn resting_sell_fully_filled_by_matching_buy() {
+        let mut book = OrderBook::new(0);
+        
+        // New: prove the reverse index not  populated before matching,
+        assert_eq!(book.cid_oid_to_order[1][1], POOL_IDX_NULL);
+        book.add(/* client_id */ 1, /* client_order_id */ 1, 0, OrderSide::Sell, 23600, 100);
+
+        // New: prove the reverse index was actually populated before matching,
+        // not just vacuously NULL from init.
+        assert_ne!(book.cid_oid_to_order[1][1], POOL_IDX_NULL);
+
+        book.add(/* client_id */ 2, /* client_order_id */ 2, 0, OrderSide::Buy, 23600, 100);
+         // 1. Both sides of the book are empty — no resting levels left.
+        assert_eq!(book.best_bid_price_level, POOL_IDX_NULL);
+        assert_eq!(book.best_ask_price_level, POOL_IDX_NULL);
+
+        // 2. The price→level index for 23600 was cleared, not left dangling.
+        let idx = OrderBook::price_to_index(23600);
+        assert_eq!(book.price_to_level_idx[idx], POOL_IDX_NULL);
+
+        // 3. The sell order's pool slot was deallocated, not just unlinked.
+        //    cid_oid_to_order[client_id][client_order_id] should be reset —
+        //    this is what remove_order() clears on the non-degenerate path,
+        //    but note: on the degenerate path (remove_orders_at_price,
+        //    i.e. "only order at this price") it's NOT cleared — that's
+        //    worth checking as a separate bug, see below.
+        assert_eq!(book.cid_oid_to_order[1][1], POOL_IDX_NULL);
+
+        // 4. No stray level or order left allocated — pool counts back to 0.
+        //    (Only meaningful if MemPool exposes an allocated-count or
+        //    free-list-length accessor — add one if it doesn't.)
+        assert_eq!(book.order_pool.pool_usage_count(), 0);
+        assert_eq!(book.orders_at_price_pool.pool_usage_count(), 0);
     }
 }

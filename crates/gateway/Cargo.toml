@@ -21,3 +21,5 @@ ctrlc.workspace = true
 rusteron-client.workspace = true
 transport = { path = "../transport", package = "transport"}
 rtrb.workspace = true
+crossbeam.workspace = true
+tokio.workspace = true

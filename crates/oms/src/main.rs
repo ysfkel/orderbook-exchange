@@ -2,6 +2,7 @@ pub mod error;
 mod network;
 mod service;
 pub mod storage;
+pub mod types;
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -10,12 +11,13 @@ use std::time::Duration;
 
 use common::queue::RingBufferQueue;
 use common::traits::ThreadHandler;
-use common::types::{AcceptedOrder, NewOrder};
+use common::types::NewOrder;
 
 use crate::network::clients::instruments::InstrumentsClient;
 use crate::network::inbound::listener::Listener;
-use crate::network::outbound::start::AcceptedOrderPublisher;
+use crate::network::outbound::publisher_service::PublisherService;
 use crate::service::new_order::NewOrderService;
+use crate::types::OutboundMessageType;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -46,10 +48,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let RingBufferQueue {
         producer: outbound_new_order_producer,
         consumer: outbound_new_order_consumer,
-    }: RingBufferQueue<AcceptedOrder> = RingBufferQueue::new(4096);
+    }: RingBufferQueue<OutboundMessageType> = RingBufferQueue::new(4096);
 
     let listener = Listener::new(new_order_producer).start();
-    let outbound_handler = AcceptedOrderPublisher::new(outbound_new_order_consumer).start();
+    let outbound_handler = PublisherService::new(outbound_new_order_consumer).start();
     let new_order_service =
         NewOrderService::new(new_order_consumer, outbound_new_order_producer).start();
     // Park until Ctrl-C.

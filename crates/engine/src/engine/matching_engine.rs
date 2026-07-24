@@ -4,6 +4,7 @@ use common::traits::ThreadHandler;
 use common::types::{AcceptedOrder, ME_MAX_TICKERS, TickerId};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use tracing::info;
 
 use crate::engine::orderbook::OrderBook;
 use crate::types::EngineRequest;
@@ -34,17 +35,20 @@ impl MatchingEngine {
             EngineRequest::NewOrder(AcceptedOrder {
                 price,
                 quantity,
-                timestamp: _,
+                timestamp,
                 client_order_id,
-                market_order_id: _,
+                market_order_id,
                 client_id,
                 ticker_id,
                 side,
                 order_type: _,
                 ..
             }) => {
-                let book = &mut self.ticker_order_book[ticker_id as usize];
-                book.add(client_id, client_order_id, ticker_id, side, price, quantity);
+
+
+                info!("process_order ticker_id {} client_id {} market_order_id {}", ticker_id, client_id,market_order_id );
+                 let book = &mut self.ticker_order_book[ticker_id as usize];
+                 book.add(client_id, client_order_id, ticker_id, side, price, quantity);
             }
         }
     }

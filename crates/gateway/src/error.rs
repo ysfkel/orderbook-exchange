@@ -12,6 +12,9 @@ pub enum ProgramError {
 
     #[error("transport subscription failed: {0}")]
     TransportSubscriptionError(#[from] transport::PollError),
+
+    #[error("outbound queue disconnected")]
+    OutboundQueueDisconnected,
 }
 
 impl From<PublishError> for ProgramError {

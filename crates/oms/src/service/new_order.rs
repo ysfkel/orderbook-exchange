@@ -2,41 +2,19 @@ use common::{
     queue::{
         QueueConsumer, QueueProducer, QueueRecvError, QueueSendError, RingBufferConsumer,
         RingBufferProducer,
-    },
-    thread_handle::ThreadHandle,
-    traits::ThreadHandler,
-    types::{AcceptedOrder, NewOrder, OrderId},
+    }, thread_handle::ThreadHandle, traits::ThreadHandler, types::{AcceptedOrder, CreateOrderMessage, NewOrder, OrderId, error::{Disposition, RejectReason}},
 };
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, atomic::AtomicU64};
 use tracing::{error, info, warn};
 
-use crate::error::ProgramError;
+use crate::{error::ProgramError, types::OutboundMessageType};
 
 /// Bounded backpressure: how many times to re-attempt a push onto a full
 /// outbound ring before rejecting the order. Bounded so a stalled publisher
 /// degrades into visible rejects instead of an invisible livelock.
 const OUTBOUND_PUSH_RETRIES: u32 = 1024;
 
-/// Why an order was not forwarded. Sent back to the client as a reject
-/// execution report; every variant is a normal business outcome, not a fault.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum RejectReason {
-    InvalidPrice,
-    InvalidQuantity,
-    InvalidSide,
-    /// Outbound pipeline saturated: order was NOT accepted.
-    SystemBusy,
-}
-
-/// The fate of one order. `Err(ProgramError)` is reserved for "the pipeline
-/// itself is broken and this thread cannot continue" — never for a
-/// per-order outcome.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Disposition {
-    Forwarded,
-    Rejected(RejectReason),
-}
 
 /// Owns the consumer side of the inbound new-order ring buffer.
 ///
@@ -47,7 +25,7 @@ pub enum Disposition {
 /// below as placeholders for that.
 pub struct NewOrderService {
     new_order_consumer: RingBufferConsumer<NewOrder>,
-    outbound_new_order_producer: RingBufferProducer<AcceptedOrder>,
+    outbound_new_order_producer: RingBufferProducer<OutboundMessageType>,
     dropped_orders: AtomicU64,
     // risk: RiskEngine
     run: Arc<AtomicBool>,
@@ -59,7 +37,7 @@ pub struct NewOrderService {
 impl NewOrderService {
     pub fn new(
         new_order_consumer: RingBufferConsumer<NewOrder>,
-        outbound_new_order_producer: RingBufferProducer<AcceptedOrder>,
+        outbound_new_order_producer: RingBufferProducer<OutboundMessageType>,
     ) -> Self {
         Self {
             new_order_consumer,
@@ -106,7 +84,6 @@ impl NewOrderService {
     /// Process one order and record its disposition.
     /// Returns false only on a fatal pipeline error (already logged).
     fn handle(&mut self, order: &NewOrder) -> bool {
-        
         match self.process_new_order(order) {
             Ok(Disposition::Forwarded) => {
                 self.forwarded += 1;
@@ -150,7 +127,7 @@ impl NewOrderService {
 
         let ticker_id = 0;
 
-        let acceped_order = AcceptedOrder::new(
+        let accepted_order = AcceptedOrder::new(
             order.price,
             order.quantity,
             order.timestamp,
@@ -162,7 +139,9 @@ impl NewOrderService {
             order.order_type,
         );
 
-        self.forward(acceped_order)
+        let msg = OutboundMessageType::New(CreateOrderMessage::new(accepted_order));
+
+        self.forward(msg)
     }
 
     /// Pre-risk validation. `None` = pass. Extend here as risk checks land;
@@ -180,8 +159,8 @@ impl NewOrderService {
         None
     }
 
-    fn forward(&mut self, accepted: AcceptedOrder) -> Result<Disposition, ProgramError> {
-        let mut order = accepted;
+    fn forward(&mut self, order_msg: OutboundMessageType) -> Result<Disposition, ProgramError> {
+        let mut order = order_msg;
         for _ in 0..OUTBOUND_PUSH_RETRIES {
             match self.outbound_new_order_producer.push(order) {
                 Ok(_) => {
@@ -201,7 +180,6 @@ impl NewOrderService {
         }
         Ok(Disposition::Rejected(RejectReason::SystemBusy))
     }
-
 }
 
 impl ThreadHandler for NewOrderService {

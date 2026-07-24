@@ -10,6 +10,7 @@ struct ObjectBlock<T> {
 pub struct MemPool<T> {
     store: Vec<ObjectBlock<T>>,
     next_free_index: usize,
+    in_use:usize,
 }
 
 impl<T: Default> MemPool<T> {
@@ -25,6 +26,7 @@ impl<T: Default> MemPool<T> {
         Self {
             store,
             next_free_index: 0,
+            in_use:0
         }
     }
 
@@ -41,6 +43,7 @@ impl<T: Default> MemPool<T> {
         block.object = T::default();
         let idx = self.next_free_index as PoolIdx;
         self.update_next_free_index();
+        self.in_use +=1;
         idx
     }
 
@@ -48,6 +51,7 @@ impl<T: Default> MemPool<T> {
         let block = &mut self.store[idx as usize];
         assert!(!block.is_free, "Expected in-use ObjectBlock at index {idx}");
         block.is_free = true;
+        self.in_use -=1;
         if (idx as usize) < self.next_free_index {
             self.next_free_index = idx as usize;
         }
@@ -56,6 +60,10 @@ impl<T: Default> MemPool<T> {
     #[inline]
     pub fn get(&self, idx: PoolIdx) -> &T {
         &self.store[idx as usize].object
+    }
+
+    pub fn pool_usage_count(&self) -> usize {
+        self.in_use
     }
 
     #[inline]

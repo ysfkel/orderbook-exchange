@@ -1,8 +1,7 @@
-use crate::error::ProgramError;
-use common::types::{AcceptedOrder, CreateOrderMessage, MAX_OFFER_RETRIES};
-use tracing::info;
+use common::types::MAX_OFFER_RETRIES;
 use transport::{PublishError, Publisher};
 use zerocopy::IntoBytes;
+use crate::types::OutboundMessageType;
 
 pub struct OrderPublisher<T: Publisher> {
     publisher: T,
@@ -16,10 +15,11 @@ where
         Self { publisher }
     }
 
-    pub fn publish_order(&self, accepted_order: AcceptedOrder) -> Result<(), PublishError> {
-        info!(" publishing outbound..");
-        let msg = CreateOrderMessage::new(accepted_order);
-        let bytes = msg.as_bytes();
+    pub fn publish(&self, msg: OutboundMessageType) -> Result<(), PublishError> {
+        let bytes: &[u8] = match &msg {
+            OutboundMessageType::New(msg) => msg.as_bytes(),
+            // ..other messages
+         };
         for attempt in 0..MAX_OFFER_RETRIES {
             match self.publisher.publish(bytes).map_err(Into::into) {
                 Ok(_) => return Ok(()),
@@ -36,4 +36,5 @@ where
 
         Ok(())
     }
+ 
 }

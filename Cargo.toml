@@ -32,3 +32,4 @@ async-trait = "0.1.89"
 rusteron-client ={ version = "0.1.163", features = ["static", "precompile"]  }
 crossbeam-utils = "0.8.21"
 rtrb = "0.3.4"
+crossbeam = "0.8.4"

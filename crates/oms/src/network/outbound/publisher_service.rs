@@ -1,10 +1,7 @@
-use super::accepted_order::OrderPublisher;
-use crate::network::config::{ACCEPTED_ORDER_CHANNEL, ACCEPTED_ORDER_STREAM_ID, AERON_DIR};
+use super::publisher::OrderPublisher;
+use crate::{network::config::{ACCEPTED_ORDER_CHANNEL, ACCEPTED_ORDER_STREAM_ID, AERON_DIR}, types::OutboundMessageType};
 use common::{
-    queue::{QueueConsumer, QueueRecvError, RingBufferConsumer},
-    thread_handle::ThreadHandle,
-    traits::ThreadHandler,
-    types::AcceptedOrder,
+    queue::{QueueConsumer, QueueRecvError, RingBufferConsumer}, thread_handle::ThreadHandle, traits::ThreadHandler, types::{AcceptedOrder, CreateOrderMessage},
 };
 use std::time::Duration;
 use std::{
@@ -15,18 +12,17 @@ use std::{
     thread,
 };
 use transport::{AeronTransport, PublishError, Publisher};
-
 const RECONNECT_DELAY: Duration = Duration::from_secs(1);
 
-pub struct AcceptedOrderPublisher {
-    consumer: RingBufferConsumer<AcceptedOrder>,
+pub struct PublisherService {
+    consumer: RingBufferConsumer<OutboundMessageType>,
     run: Arc<AtomicBool>,
     pub publish_count: u64,
     pub dropped_count: u64,
 }
 
-impl AcceptedOrderPublisher {
-    pub fn new(consumer: RingBufferConsumer<AcceptedOrder>) -> Self {
+impl PublisherService {
+    pub fn new(consumer: RingBufferConsumer<OutboundMessageType>) -> Self {
         Self {
             consumer,
             run: Arc::new(AtomicBool::new(false)),
@@ -93,13 +89,14 @@ impl AcceptedOrderPublisher {
     fn publish_one<T>(
         &mut self,
         publisher: &OrderPublisher<T>,
-        order: AcceptedOrder,
+        order: OutboundMessageType,
     ) -> Result<(), PublishError>
     where
         T: Publisher,
         T::Error: Into<PublishError>,
     {
-        match publisher.publish_order(order) {
+    
+        match publisher.publish(order) {
             Ok(()) => {
                 self.publish_count += 1;
                 Ok(())
@@ -115,7 +112,7 @@ impl AcceptedOrderPublisher {
     }
 }
 
-impl ThreadHandler for AcceptedOrderPublisher {
+impl ThreadHandler for PublisherService {
     fn start(self) -> ThreadHandle {
         self.run.store(true, Ordering::Release);
         let run = self.run.clone();

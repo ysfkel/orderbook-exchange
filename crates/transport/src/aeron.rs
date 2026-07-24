@@ -64,7 +64,7 @@ impl AeronTransport {
         // Redirect C-level aeron errors through tracing instead of raw stderr.
         // Without this, aeronmd shutdown prints "(1000): MediaDriver has been
         // shutdown" directly to stderr, bypassing all Rust error handling.
-        ctx.set_error_handler(Some(&Handler::leak(AeronErrorHandlerLogger)))?;
+        //   ctx.set_error_handler(Some(&Handler::leak(AeronErrorHandlerLogger)))?;
 
         let aeron = Aeron::new(&ctx)?;
         aeron.start()?;
